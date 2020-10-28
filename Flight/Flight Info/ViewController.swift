@@ -45,17 +45,22 @@ class ViewController: UIViewController {
 
   private func changeFlight(to flight: Flight, animated: Bool = false) {
     // Populate the UI with the next flight's data
-    originLabel.text = flight.origin
-    destinationLabel.text = flight.destination
     flightNumberLabel.text = flight.number
     gateNumberLabel.text = flight.gateNumber
     statusLabel.text = flight.status
     summary.text = flight.summary
 
     if animated {
+      // Animate Image
       guard let image = UIImage(named: flight.weatherImageName) else { return }
       fade(to: image, showEffects: flight.showWeatherEffects)
+
+      // Animate Origin and Destination labels
+      move(label: originLabel, text: flight.origin, offset: .init(x: -80, y: 0))
+      move(label: destinationLabel, text: flight.destination, offset: .init(x: 80, y: 0))
     } else {
+      originLabel.text = flight.origin
+      destinationLabel.text = flight.destination
       background.image = UIImage(named: flight.weatherImageName)
     }
 
@@ -115,7 +120,39 @@ class ViewController: UIViewController {
   }
   
   private func move(label: UILabel, text: String, offset: CGPoint) {
-    //TODO: Animate a label's translation property
+    // Create and set up a temprorary label
+    let tempLabel = duplicate(label)
+    tempLabel.text = text
+    tempLabel.transform = .init(translationX: offset.x, y: offset.y)
+    tempLabel.alpha = 0
+
+    // Add tempLabel to the view
+    view.addSubview(tempLabel)
+
+    // Fade out and translate the real label
+    UIView.animate(withDuration: 0.5,
+                   delay: 0,
+                   options: .curveEaseOut,
+                   animations: {
+                    label.transform = .init(translationX: offset.x, y: offset.y)
+                    label.alpha = 0
+    })
+
+    // Fade in and translate the temporary label
+    UIView.animate(withDuration: 0.25,
+                   delay: 0.2,
+                   options: .curveEaseIn,
+                   animations: {
+                    tempLabel.transform = .identity
+                    tempLabel.alpha = 1
+    }, completion: { _ in
+      // Update real label and remove the temporary label
+      label.text = text
+      label.alpha = 1
+      label.transform = .identity
+
+      tempLabel.removeFromSuperview()
+    })
   }
   
   private func cubeTransition(label: UILabel, text: String) {
