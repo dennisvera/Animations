@@ -47,7 +47,6 @@ class ViewController: UIViewController {
     // Populate the UI with the next flight's data
     flightNumberLabel.text = flight.number
     gateNumberLabel.text = flight.gateNumber
-    statusLabel.text = flight.status
     summary.text = flight.summary
 
     if animated {
@@ -58,7 +57,10 @@ class ViewController: UIViewController {
       // Animate Origin and Destination labels
       move(label: originLabel, text: flight.origin, offset: .init(x: -80, y: 0))
       move(label: destinationLabel, text: flight.destination, offset: .init(x: 80, y: 0))
+
+      cubeTransition(label: statusLabel, text: flight.status)
     } else {
+      statusLabel.text = flight.status
       originLabel.text = flight.origin
       destinationLabel.text = flight.destination
       background.image = UIImage(named: flight.weatherImageName)
@@ -120,7 +122,7 @@ class ViewController: UIViewController {
   }
   
   private func move(label: UILabel, text: String, offset: CGPoint) {
-    // Create and set up a temprorary label
+    // Create and set up a temporary label
     let tempLabel = duplicate(label)
     tempLabel.text = text
     tempLabel.transform = .init(translationX: offset.x, y: offset.y)
@@ -156,7 +158,35 @@ class ViewController: UIViewController {
   }
   
   private func cubeTransition(label: UILabel, text: String) {
-    //TODO: Create a faux rotating cube animation
+    // Create and set up temporary label
+    let tempLabel = duplicate(label)
+    tempLabel.text = text
+
+    let tempLabelOffset = label.bounds.size.height / 2
+    let scale = CGAffineTransform(scaleX: 1, y: 0.1)
+    let translate = CGAffineTransform(translationX: 0, y: tempLabelOffset)
+
+    tempLabel.transform = scale.concatenating(translate)
+
+    label.superview?.addSubview(tempLabel)
+
+    UIView.animate(withDuration: 0.5,
+                   delay: 0,
+                   options: .curveEaseOut,
+                   animations: {
+                    // Scale temporary label up and translate down
+                    tempLabel.transform = .identity
+
+                    // Scale real label up and translate down
+                    label.transform = scale.concatenating( translate.inverted() )
+    }, completion: { _ in
+      // Update real label's text and reset it's trnasform
+      label.text = tempLabel.text
+      label.transform = .identity
+
+      // Remove temporary label
+      tempLabel.removeFromSuperview()
+    })
   }
   
   private func depart() {
