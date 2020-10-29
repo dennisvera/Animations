@@ -68,29 +68,44 @@ extension PopAnimator: UIViewControllerAnimatedTransitioning {
       herbView.center = .init(x: initialFrame.midX, y: initialFrame.midY)
     }
 
+    herbView.clipsToBounds = true
+    herbView.layer.cornerRadius = presenting ? 20 / scaleTransform.a : 0
+
     if let toView = transitionContext.view(forKey: .to) {
       containerView.addSubview(toView)
     }
 
     containerView.bringSubviewToFront(herbView)
 
+    guard let herbDetailsContainer = ( transitionContext.viewController( forKey: presenting ? .to : .from) as? HerbDetailsViewController )?.containerView else { return }
+
+    if presenting {
+      herbDetailsContainer.alpha = 0
+    }
+
     // Animate
     UIView.animate(withDuration: duration,
                    delay: 0,
                    usingSpringWithDamping: 0.6,
                    initialSpringVelocity: 0,
-                   animations: {
-                    herbView.transform = self.presenting ? .identity : scaleTransform
-                    herbView.center = .init(x: finalFrame.midX, y: finalFrame.midY)
+                   animations: { [weak self ] in
+                    guard let strongSelf = self else { return }
 
-    }, completion: { _ in
-      if !self.presenting {
+                    herbDetailsContainer.alpha = strongSelf.presenting ? 1 : 0
+
+                    herbView.transform = strongSelf.presenting ? .identity : scaleTransform
+                    herbView.center = .init(x: finalFrame.midX, y: finalFrame.midY)
+                    herbView.layer.cornerRadius = strongSelf.presenting ? 0 : 20 / scaleTransform.a
+
+    }, completion: { [weak self ] _ in
+      guard let strongSelf = self else { return }
+
+      if !strongSelf.presenting {
         (transitionContext.viewController(forKey: .to) as! ViewController).selectedImage?.alpha = 1
       }
 
       // Complete transition
       transitionContext.completeTransition(true)
-
     })
   }
 }

@@ -55,12 +55,12 @@ final class ViewController: UIViewController {
         stackView.addArrangedSubview(imageView)
 
         imageView.addGestureRecognizer(TapGestureRecognizer { [weak self, weak imageView] in
-            guard let strongSelf = self else { return }
-            strongSelf.selectedImage = imageView
+          guard let strongSelf = self else { return }
+          strongSelf.selectedImage = imageView
 
-            let herbDetails: HerbDetailsViewController = .instantiate { .init(coder: $0, herb: herb) }!
-            herbDetails.transitioningDelegate = self
-            strongSelf.present(herbDetails, animated: true)
+          let herbDetails: HerbDetailsViewController = .instantiate { .init(coder: $0, herb: herb) }!
+          herbDetails.transitioningDelegate = self
+          strongSelf.present(herbDetails, animated: true)
           }
         )
       }
@@ -80,8 +80,10 @@ final class ViewController: UIViewController {
                                    with coordinator: UIViewControllerTransitionCoordinator) {
     super.viewWillTransition(to: size, with: coordinator)
     coordinator.animate(
-      alongsideTransition: { _ in
-        self.background.alpha = (size.width > size.height) ? 0.25 : 0.55
+      alongsideTransition: { [weak self] _ in
+        guard let strongSelf = self else { return }
+
+        strongSelf.background.alpha = (size.width > size.height) ? 0.25 : 0.55
     })
   }
 }
@@ -98,7 +100,7 @@ extension ViewController: UIViewControllerTransitioningDelegate {
       popAnimator.presenting = true
       popAnimator.originFrame = selectedImage.superview!.convert(selectedImage.frame, to: nil)
     }
-
+    
     return popAnimator
   }
 
