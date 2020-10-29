@@ -32,6 +32,65 @@
 
 import UIKit
 
-final class PopAnimator {
+final class PopAnimator: NSObject {
 
+  // MARK: - Properties
+
+  var presenting = true
+
+  var originFrame = CGRect()
+  private let duration: TimeInterval = 1
+
+}
+
+// MARK: - UIViewController Animated Transitioning
+
+extension PopAnimator: UIViewControllerAnimatedTransitioning {
+
+  func transitionDuration(using _: UIViewControllerContextTransitioning?) -> TimeInterval {
+    duration
+  }
+
+  func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+    // Set up transition
+    let containerView = transitionContext.containerView
+
+    guard let herbView = transitionContext.view(forKey: presenting ? .to : .from) else { return }
+
+    let (initialFrame, finalFrame) = presenting ? (originFrame, herbView.frame) : (herbView.frame, originFrame)
+
+    let scaleTransform = presenting
+      ? CGAffineTransform(scaleX: initialFrame.width / finalFrame.width, y: initialFrame.height / finalFrame.height)
+      : .init(scaleX: finalFrame.width / initialFrame.width, y: finalFrame.height / initialFrame.height)
+
+    if presenting {
+      herbView.transform = scaleTransform
+      herbView.center = .init(x: initialFrame.midX, y: initialFrame.midY)
+    }
+
+    if let toView = transitionContext.view(forKey: .to) {
+      containerView.addSubview(toView)
+    }
+
+    containerView.bringSubviewToFront(herbView)
+
+    // Animate
+    UIView.animate(withDuration: duration,
+                   delay: 0,
+                   usingSpringWithDamping: 0.6,
+                   initialSpringVelocity: 0,
+                   animations: {
+                    herbView.transform = self.presenting ? .identity : scaleTransform
+                    herbView.center = .init(x: finalFrame.midX, y: finalFrame.midY)
+
+    }, completion: { _ in
+      if !self.presenting {
+        (transitionContext.viewController(forKey: .to) as! ViewController).selectedImage?.alpha = 1
+      }
+
+      // Complete transition
+      transitionContext.completeTransition(true)
+
+    })
+  }
 }

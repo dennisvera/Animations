@@ -38,25 +38,28 @@ final class ViewController: UIViewController {
 
   @IBOutlet private var background: UIImageView!
 
+  // MARK: -
+
   @IBOutlet private var stackView: UIStackView! {
     didSet {
       for herb in Herb.all {
         let imageView = UIImageView( image: .init(herb: herb) )
-        imageView.contentMode = .scaleAspectFill
-        imageView.isUserInteractionEnabled = true
         imageView.layer.cornerRadius = 20
         imageView.layer.masksToBounds = true
+        imageView.contentMode = .scaleAspectFill
+        imageView.isUserInteractionEnabled = true
 
         imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor,
                                          multiplier: UIScreen.main.bounds.width / UIScreen.main.bounds.height).isActive = true
+
         stackView.addArrangedSubview(imageView)
 
-        imageView.addGestureRecognizer(
-          TapGestureRecognizer { [weak self, weak imageView] in
+        imageView.addGestureRecognizer(TapGestureRecognizer { [weak self, weak imageView] in
             guard let strongSelf = self else { return }
             strongSelf.selectedImage = imageView
 
             let herbDetails: HerbDetailsViewController = .instantiate { .init(coder: $0, herb: herb) }!
+            herbDetails.transitioningDelegate = self
             strongSelf.present(herbDetails, animated: true)
           }
         )
@@ -66,7 +69,8 @@ final class ViewController: UIViewController {
 
   // MARK: - Properties
 
-  private(set) var selectedImage: UIImageView!
+  private let popAnimator = PopAnimator()
+  private(set) var selectedImage: UIImageView?
 
   // MARK: - Overrides
 
@@ -79,5 +83,27 @@ final class ViewController: UIViewController {
       alongsideTransition: { _ in
         self.background.alpha = (size.width > size.height) ? 0.25 : 0.55
     })
+  }
+}
+
+// MARK: - UIViewController Transitioning Delegate
+
+extension ViewController: UIViewControllerTransitioningDelegate {
+
+  func animationController(forPresented _: UIViewController,
+                           presenting _: UIViewController,
+                           source _: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    if let selectedImage = selectedImage {
+      selectedImage.alpha = 0
+      popAnimator.presenting = true
+      popAnimator.originFrame = selectedImage.superview!.convert(selectedImage.frame, to: nil)
+    }
+
+    return popAnimator
+  }
+
+  func animationController(forDismissed _: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+    popAnimator.presenting = false
+    return popAnimator
   }
 }
