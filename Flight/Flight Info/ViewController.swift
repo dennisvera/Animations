@@ -47,7 +47,6 @@ class ViewController: UIViewController {
     // Populate the UI with the next flight's data
     flightNumberLabel.text = flight.number
     gateNumberLabel.text = flight.gateNumber
-    summary.text = flight.summary
 
     if animated {
       // Animate Image
@@ -58,8 +57,16 @@ class ViewController: UIViewController {
       move(label: originLabel, text: flight.origin, offset: .init(x: -80, y: 0))
       move(label: destinationLabel, text: flight.destination, offset: .init(x: 80, y: 0))
 
+      // Animate Status label
       cubeTransition(label: statusLabel, text: flight.status)
+
+      // Animate Plane
+      depart()
+
+      // Animate Summary Label
+      changeSummary(to: flight.summary)
     } else {
+      summary.text = flight.summary
       statusLabel.text = flight.status
       originLabel.text = flight.origin
       destinationLabel.text = flight.destination
@@ -99,7 +106,7 @@ class ViewController: UIViewController {
 
     background.superview?.insertSubview(tempView, aboveSubview: background)
 
-    // Animate Temporary view transition
+    // Animate temporary view transition
     UIView.animate(withDuration: 0.5,
                    animations: {
                     // Fade temporary view in
@@ -190,10 +197,76 @@ class ViewController: UIViewController {
   }
   
   private func depart() {
-    //TODO: Animate the plane taking off and landing
+    // Store the plane's center value
+    let originalCenter = plane.center
+
+    //Create new key frame animation
+    UIView.animateKeyframes(withDuration: 1.5,
+                            delay: 0,
+                            animations: { [weak self] in
+                              guard let strongSelf = self else { return }
+
+                              // Move plane right and up
+                              UIView.addKeyframe(withRelativeStartTime: 0,
+                                                 relativeDuration: 0.25) {
+                                                  strongSelf.plane.center.x += 80
+                                                  strongSelf.plane.center.y -= 10
+                              }
+
+                              // Rotate plane
+                              UIView.addKeyframe(withRelativeStartTime: 0.1,
+                                                 relativeDuration: 0.4) {
+                                                  strongSelf.plane.transform = .init(rotationAngle: -.pi / 8)
+                              }
+                              
+                              // Move plane right and up off screen, while fading out
+                              UIView.addKeyframe(withRelativeStartTime: 0.25,
+                                                 relativeDuration: 0.25) {
+                                                  strongSelf.plane.center.x += 100
+                                                  strongSelf.plane.center.y -= 50
+                                                  strongSelf.plane.alpha = 0
+                              }
+                              
+                              // Move plane just off left side, reset transform nd hegith
+                              UIView.addKeyframe(withRelativeStartTime: 0.51,
+                                                 relativeDuration: 0.01) {
+                                                  strongSelf.plane.transform = .identity
+                                                  strongSelf.plane.center = .init(x: 0, y: originalCenter.y)
+                              }
+
+                              // Move plane back to original position and fade in
+                              UIView.addKeyframe(withRelativeStartTime: 0.55,
+                                                 relativeDuration: 0.45) {
+                                                  strongSelf.plane.alpha = 1
+                                                  strongSelf.plane.center = originalCenter
+                              }
+
+    })
   }
   
   private func changeSummary(to summaryText: String) {
-    //TODO: Animate the summary text
+    UIView.animateKeyframes(withDuration: 1,
+                            delay: 0,
+                            animations: { [weak self] in
+                              guard let strongSelf = self else { return }
+
+                              // Animate summary label up
+                              UIView.addKeyframe(withRelativeStartTime: 0,
+                                                 relativeDuration: 0.45) {
+                                                  strongSelf.summary.center.y -= 100
+                              }
+
+                              // Animate summary label down
+                              UIView.addKeyframe(withRelativeStartTime: 0.5,
+                                                 relativeDuration: 0.45) {
+                                                  strongSelf.summary.center.y += 100
+                              }
+    })
+
+    // Set the summary label text
+    delay(seconds: 0.5) { [weak self] in
+      guard let strongSelf = self else { return }
+      strongSelf.summary.text = summaryText
+    }
   }
 }
